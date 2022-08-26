@@ -1,7 +1,11 @@
 module AST where
 
 import Control.Applicative ((<|>))
-import Data.Bits (Bits (xor))
+-- import Data.Bits (Bits (xor))
+
+import Data.Maybe (mapMaybe)
+import Data.Set (Set)
+import qualified Data.Set as S
 
 data Expr
   = Var Char
@@ -20,8 +24,8 @@ freeVariable (And x y) = freeVariable x <|> freeVariable y
 
 guessVariable :: Char -> Bool -> Expr -> Expr
 guessVariable v b e = case e of
-  Const b -> Const b
-  Not e -> Not $ guessVariable v b e
+  Const b' -> Const b'
+  Not e' -> Not $ guessVariable v b e'
   Or l r -> Or (guessVariable v b l) (guessVariable v b r)
   And l r -> And (guessVariable v b l) (guessVariable v b r)
   Var c ->
@@ -31,6 +35,7 @@ guessVariable v b e = case e of
 
 simplify :: Expr -> Expr
 simplify (Const b) = (Const b)
+simplify (Var v) = Var v
 simplify (Not (Const b)) = Const (not b)
 simplify (Not e) = Not e
 simplify (Or x y) =
@@ -41,6 +46,7 @@ simplify (Or x y) =
           [] -> Const False
           [e] -> e
           [e1, e2] -> Or e1 e2
+          _ -> error "Internal Error: Unreachable match met"
 simplify (And x y) =
   let es = filter (/= Const True) [simplify x, simplify y]
    in if Const False `elem` es
@@ -49,6 +55,7 @@ simplify (And x y) =
           [] -> Const True
           [e] -> e
           [e1, e2] -> And e1 e2
+          _ -> error "Internal Error: Unreachable match met"
 
 unConst :: Expr -> Bool
 unConst (Const b) = b
@@ -68,7 +75,7 @@ fixNegations expr =
   case expr of
     Not (Not x) -> fixNegations x
     Not (And x y) -> Or (fixNegations $ Not x) (fixNegations $ Not y)
-    Not (Or x y) -> And (fixNegations $ Not x) (fixNegations $ Not x)
+    Not (Or x y) -> And (fixNegations $ Not x) (fixNegations $ Not y)
     Not (Const b) -> Const (not b)
     Not x -> Not (fixNegations x)
     And x y -> And (fixNegations x) (fixNegations y)
@@ -98,3 +105,39 @@ cnf expr =
     else cnf updated
   where
     updated = distribute (fixNegations expr)
+
+literals :: Expr -> Set Char
+literals (Var v) = S.singleton v
+literals (Not e) = literals e
+literals (And x y) = S.union (literals x) (literals y)
+literals (Or x y) = S.union (literals x) (literals y)
+literals (Const _) = S.empty
+
+data Polarity = Positive | Negative | Mixed
+  deriving (Show, Eq)
+
+literalPolarity :: Expr -> Char -> Maybe Polarity
+literalPolarity (Var v) v'
+  | v == v' = Just Positive
+  | otherwise = Nothing
+literalPolarity (Not (Var v)) v'
+  | v == v' = Just Negative
+  | otherwise = Nothing
+literalPolarity e v =
+  case e of
+    And x y -> combinePolarities [x, y]
+    Or x y -> combinePolarities [x, y]
+    Not x -> error $ "Not in CNF: negation of a non-literal" ++ show x
+    Const _ -> Nothing
+  where
+    combinePolarities es =
+      let polarities = mapMaybe (flip literalPolarity v) es
+       in case polarities of
+            [] -> Nothing
+            ps ->
+              if all (== Positive) ps
+                then Just Positive
+                else
+                  if all (== Negative) ps
+                    then Just Negative
+                    else Just Mixed

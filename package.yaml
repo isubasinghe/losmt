@@ -20,10 +20,14 @@ extra-source-files:
 description:         Please see the README on GitHub at <https://github.com/githubuser/losmt#readme>
 
 dependencies:
-- base >= 4.7 && < 5
+  - base >= 4.7 && < 5
+  - containers ==0.6.5.1
 
 library:
   source-dirs: src
+  ghc-options:
+    - -Wall
+    - -Werror
 
 executables:
   losmt-exe:
@@ -33,6 +37,7 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -Wall
     dependencies:
     - losmt
 
