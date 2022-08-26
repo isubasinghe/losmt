@@ -1,11 +1,6 @@
 module AST where
 
 import Control.Applicative ((<|>))
--- import Data.Bits (Bits (xor))
-
-import Data.Maybe (mapMaybe)
-import Data.Set (Set)
-import qualified Data.Set as S
 
 data Expr
   = Var Char
@@ -69,75 +64,3 @@ satisfiable expr =
       let trueGuess = simplify (guessVariable v True expr)
           falseGuess = simplify (guessVariable v False expr)
        in satisfiable trueGuess || satisfiable falseGuess
-
-fixNegations :: Expr -> Expr
-fixNegations expr =
-  case expr of
-    Not (Not x) -> fixNegations x
-    Not (And x y) -> Or (fixNegations $ Not x) (fixNegations $ Not y)
-    Not (Or x y) -> And (fixNegations $ Not x) (fixNegations $ Not y)
-    Not (Const b) -> Const (not b)
-    Not x -> Not (fixNegations x)
-    And x y -> And (fixNegations x) (fixNegations y)
-    Or x y -> Or (fixNegations x) (fixNegations y)
-    x -> x
-
-distribute :: Expr -> Expr
-distribute expr =
-  case expr of
-    Or x (And y z) ->
-      And
-        (Or (distribute x) (distribute y))
-        (Or (distribute x) (distribute z))
-    Or (And y z) x ->
-      And
-        (Or (distribute x) (distribute y))
-        (Or (distribute x) (distribute z))
-    Or x y -> Or (distribute x) (distribute y)
-    And x y -> And (distribute x) (distribute y)
-    Not x -> Not (distribute x)
-    x -> x
-
-cnf :: Expr -> Expr
-cnf expr =
-  if updated == expr
-    then expr
-    else cnf updated
-  where
-    updated = distribute (fixNegations expr)
-
-literals :: Expr -> Set Char
-literals (Var v) = S.singleton v
-literals (Not e) = literals e
-literals (And x y) = S.union (literals x) (literals y)
-literals (Or x y) = S.union (literals x) (literals y)
-literals (Const _) = S.empty
-
-data Polarity = Positive | Negative | Mixed
-  deriving (Show, Eq)
-
-literalPolarity :: Expr -> Char -> Maybe Polarity
-literalPolarity (Var v) v'
-  | v == v' = Just Positive
-  | otherwise = Nothing
-literalPolarity (Not (Var v)) v'
-  | v == v' = Just Negative
-  | otherwise = Nothing
-literalPolarity e v =
-  case e of
-    And x y -> combinePolarities [x, y]
-    Or x y -> combinePolarities [x, y]
-    Not x -> error $ "Not in CNF: negation of a non-literal" ++ show x
-    Const _ -> Nothing
-  where
-    combinePolarities es =
-      let polarities = mapMaybe (flip literalPolarity v) es
-       in case polarities of
-            [] -> Nothing
-            ps ->
-              if all (== Positive) ps
-                then Just Positive
-                else
-                  if all (== Negative) ps
-                    then Just Negative
-                    else Just Mixed

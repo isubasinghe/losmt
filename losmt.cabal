@@ -26,6 +26,8 @@ source-repository head
 library
   exposed-modules:
       AST
+      CNF
+      DPLL
       Lib
   other-modules:
       Paths_losmt
