@@ -3,7 +3,8 @@ module SAT.DPLL where
 import Data.Maybe (catMaybes, mapMaybe)
 import Data.Set (Set)
 import qualified Data.Set as S
-import SAT.AST
+import SAT.AST hiding (satisfiable)
+import SAT.CNF (cnf)
 
 literals :: Expr -> Set Char
 literals (Var v) = S.singleton v
@@ -81,6 +82,19 @@ unitPropagation expr = replaceAll expr
   where
     assignments :: [(Char, Bool)]
     assignments = allUnitClauses expr
-  
+
     replaceAll :: Expr -> Expr
     replaceAll = foldl (.) id (map (uncurry guessVariable) assignments)
+
+satisfiable :: Expr -> Bool
+satisfiable expr =
+  case freeVariable expr' of
+    Nothing -> unConst $ simplify expr'
+    Just v ->
+      let trueGuess = simplify (guessVariable v True expr)
+          falseGuess = simplify (guessVariable v False expr)
+       in satisfiable trueGuess || satisfiable falseGuess
+  where
+    -- Apply our backtracking search *after* literal elimination
+    -- and unit propagation have been applied!
+    expr' = literalElimination $ cnf $ unitPropagation expr
