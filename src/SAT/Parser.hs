@@ -33,24 +33,32 @@ parseIdentifier :: Parser A.Expr
 parseIdentifier = A.Var <$> identifier <?> "<identifier>"
 
 parseNot :: Parser A.Expr
-parseNot = A.Not <$> (parens $ string "not" *> space1 *> parseExpr)
+parseNot = parens $ do
+  _ <- string "not"
+  _ <- space
+  e <- parseExpr
+  pure $ A.Not e
 
 parseAnd :: Parser A.Expr
 parseAnd = parens $ do
+  _ <- string "and"
+  _ <- space
   lhs <- parseExpr
-  _ <- space1
+  _ <- space
   rhs <- parseExpr
   pure $ A.And lhs rhs
 
-parseOr :: Parser A.Expr 
-parseOr = parens $ do 
-  lhs <- parseExpr 
-  _ <- space1 
-  rhs <- parseExpr 
+parseOr :: Parser A.Expr
+parseOr = parens $ do
+  _ <- string "or"
+  _ <- space
+  lhs <- parseExpr
+  _ <- space
+  rhs <- parseExpr
   pure $ A.Or lhs rhs
 
-parseConst :: Parser A.Expr 
-parseConst =  A.Const <$> (True <$ string "#t" <|> False <$ "#f")
+parseConst :: Parser A.Expr
+parseConst = A.Const <$> (True <$ string "#t" <|> False <$ "#f")
 
 parseExpr :: Parser A.Expr
-parseExpr = parseIdentifier <|> parseConst <|> parseNot <|> parseAnd <|> parseOr
+parseExpr = parseConst <|> parseIdentifier <|> try parseNot <|> try parseAnd <|> parseOr
