@@ -1,6 +1,6 @@
-module CNF where
+module SAT.CNF where
 
-import AST
+import SAT.AST
 
 fixNegations :: Expr -> Expr
 fixNegations expr =

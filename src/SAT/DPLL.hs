@@ -1,6 +1,6 @@
-module DPLL where
+module SAT.DPLL where
 
-import AST
+import SAT.AST
 import Data.Maybe (catMaybes, mapMaybe)
 import Data.Set (Set)
 import qualified Data.Set as S
@@ -42,11 +42,12 @@ literalPolarity e v =
                     else Just Mixed
 
 literalElimination :: Expr -> Expr
-literalElimination e =
-  undefined
+literalElimination e = 
+  let ls = S.toList (literals e) 
+      ps = map (literalPolarity e) ls
 
 unitClause :: Expr -> Maybe (Char, Bool)
-unitClause x = undefined
+unitClause (Var v) = Just (v, True)
 
 clauses :: Expr -> [Expr]
 clauses e = undefined

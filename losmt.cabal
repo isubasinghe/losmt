@@ -25,10 +25,10 @@ source-repository head
 
 library
   exposed-modules:
-      AST
-      CNF
-      DPLL
-      Lib
+      SAT.AST
+      SAT.CNF
+      SAT.DPLL
+      SMT.AST
   other-modules:
       Paths_losmt
   hs-source-dirs:

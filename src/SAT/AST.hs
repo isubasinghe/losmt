@@ -1,4 +1,4 @@
-module AST where
+module SAT.AST where
 
 import Control.Applicative ((<|>))
 
