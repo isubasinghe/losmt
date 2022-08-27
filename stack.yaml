@@ -40,8 +40,14 @@ packages:
 # - git: https://github.com/commercialhaskell/stack.git
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
-# extra-deps: []
-
+extra-deps: 
+  - megaparsec-9.2.1@sha256:d3756f634324f4d3ae57088bbf544723871cdb584508fc9b5c9e33ad9de3d313,3354
+  - case-insensitive-1.2.1.0@sha256:9dfd3171fc7698cf8d931727d3af3a7b389135b583e46b5adac1f9d2026fff61,2244
+  - parser-combinators-1.3.0@sha256:edd54ba56cbae8fadbcceebcfef31b2c70a835e92e5eda41151b939c40647281,1570
+  - scientific-0.3.7.0@sha256:517444c944dad9db8235d7b311d7b9a0839a519ee3178288b5a9606256e0c7d8,4840
+  - hashable-1.4.1.0@sha256:50b2f002c68fe67730ee7a3cd8607486197dd99b084255005ad51ecd6970a41b,5019
+  - integer-logarithms-1.0.3.1@sha256:d59bfd1d39808217af2b68789d3c0e57cb7199d47405a276060d88fef4f4017d,3246
+  - primitive-0.7.4.0@sha256:89b88a3e08493b7727fa4089b0692bfbdf7e1e666ef54635f458644eb8358764,2857
 # Override default flag values for local packages and extra-deps
 # flags: {}
 

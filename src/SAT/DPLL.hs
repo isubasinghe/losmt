@@ -5,8 +5,9 @@ import Data.Set (Set)
 import qualified Data.Set as S
 import SAT.AST hiding (satisfiable)
 import SAT.CNF (cnf)
+import Data.Text (Text)
 
-literals :: Expr -> Set Char
+literals :: Expr -> Set Text
 literals (Var v) = S.singleton v
 literals (Not e) = literals e
 literals (And x y) = S.union (literals x) (literals y)
@@ -16,7 +17,7 @@ literals (Const _) = S.empty
 data Polarity = Positive | Negative | Mixed
   deriving (Show, Eq)
 
-literalPolarity :: Expr -> Char -> Maybe Polarity
+literalPolarity :: Expr -> Text -> Maybe Polarity
 literalPolarity (Var v) v'
   | v == v' = Just Positive
   | otherwise = Nothing
@@ -48,13 +49,13 @@ literalElimination e =
       ps = map (literalPolarity e) ls
 
       -- Find assignments we can make
-      extractPolarized :: Char -> Maybe Polarity -> Maybe (Char, Bool)
+      extractPolarized :: Text -> Maybe Polarity -> Maybe (Text, Bool)
       extractPolarized v (Just Positive) = Just (v, True)
       extractPolarized v (Just Negative) = Just (v, False)
       extractPolarized _ _ = Nothing
 
       -- Find *all* possible assignments
-      assignments :: [(Char, Bool)]
+      assignments :: [(Text, Bool)]
       assignments = catMaybes $ zipWith extractPolarized ls ps
 
       -- Apply all the assignments.
@@ -65,7 +66,7 @@ literalElimination e =
       replaceAll = foldl (.) id replacers
    in replaceAll e
 
-unitClause :: Expr -> Maybe (Char, Bool)
+unitClause :: Expr -> Maybe (Text, Bool)
 unitClause (Var v) = Just (v, True)
 unitClause (Not (Var v)) = Just (v, False)
 unitClause _ = Nothing
@@ -74,13 +75,13 @@ clauses :: Expr -> [Expr]
 clauses (And x y) = clauses x ++ clauses y
 clauses expr = [expr]
 
-allUnitClauses :: Expr -> [(Char, Bool)]
+allUnitClauses :: Expr -> [(Text, Bool)]
 allUnitClauses = mapMaybe unitClause . clauses
 
 unitPropagation :: Expr -> Expr
 unitPropagation expr = replaceAll expr
   where
-    assignments :: [(Char, Bool)]
+    assignments :: [(Text, Bool)]
     assignments = allUnitClauses expr
 
     replaceAll :: Expr -> Expr

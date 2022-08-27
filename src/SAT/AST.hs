@@ -1,23 +1,24 @@
 module SAT.AST where
 
 import Control.Applicative ((<|>))
+import Data.Text (Text)
 
 data Expr
-  = Var Char
+  = Var Text
   | And Expr Expr
   | Or Expr Expr
   | Not Expr
   | Const Bool
   deriving (Show, Eq)
 
-freeVariable :: Expr -> Maybe Char
+freeVariable :: Expr -> Maybe Text
 freeVariable (Const _) = Nothing
 freeVariable (Var v) = Just v
 freeVariable (Not e) = freeVariable e
 freeVariable (Or x y) = freeVariable x <|> freeVariable y
 freeVariable (And x y) = freeVariable x <|> freeVariable y
 
-guessVariable :: Char -> Bool -> Expr -> Expr
+guessVariable :: Text -> Bool -> Expr -> Expr
 guessVariable v b e = case e of
   Const b' -> Const b'
   Not e' -> Not $ guessVariable v b e'
