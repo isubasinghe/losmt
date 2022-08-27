@@ -1,9 +1,9 @@
 module SAT.DPLL where
 
-import SAT.AST
 import Data.Maybe (catMaybes, mapMaybe)
 import Data.Set (Set)
 import qualified Data.Set as S
+import SAT.AST
 
 literals :: Expr -> Set Char
 literals (Var v) = S.singleton v
@@ -42,18 +42,45 @@ literalPolarity e v =
                     else Just Mixed
 
 literalElimination :: Expr -> Expr
-literalElimination e = 
-  let ls = S.toList (literals e) 
+literalElimination e =
+  let ls = S.toList (literals e)
       ps = map (literalPolarity e) ls
+
+      -- Find assignments we can make
+      extractPolarized :: Char -> Maybe Polarity -> Maybe (Char, Bool)
+      extractPolarized v (Just Positive) = Just (v, True)
+      extractPolarized v (Just Negative) = Just (v, False)
+      extractPolarized _ _ = Nothing
+
+      -- Find *all* possible assignments
+      assignments :: [(Char, Bool)]
+      assignments = catMaybes $ zipWith extractPolarized ls ps
+
+      -- Apply all the assignments.
+      replacers :: [Expr -> Expr]
+      replacers = map (uncurry guessVariable) assignments
+
+      replaceAll :: Expr -> Expr
+      replaceAll = foldl (.) id replacers
+   in replaceAll e
 
 unitClause :: Expr -> Maybe (Char, Bool)
 unitClause (Var v) = Just (v, True)
+unitClause (Not (Var v)) = Just (v, False)
+unitClause _ = Nothing
 
 clauses :: Expr -> [Expr]
-clauses e = undefined
+clauses (And x y) = clauses x ++ clauses y
+clauses expr = [expr]
 
 allUnitClauses :: Expr -> [(Char, Bool)]
-allUnitClauses e = undefined
+allUnitClauses = mapMaybe unitClause . clauses
 
 unitPropagation :: Expr -> Expr
-unitPropagation e = undefined
+unitPropagation expr = replaceAll expr
+  where
+    assignments :: [(Char, Bool)]
+    assignments = allUnitClauses expr
+  
+    replaceAll :: Expr -> Expr
+    replaceAll = foldl (.) id (map (uncurry guessVariable) assignments)
